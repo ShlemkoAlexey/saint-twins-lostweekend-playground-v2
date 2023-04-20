@@ -1,25 +1,60 @@
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { PERSONS } from '@/const/addreses/persons';
-import { Button } from '@mui/material';
+import { Button, IconButton, Snackbar, Tooltip } from '@mui/material';
 import { PLACES } from '@/const/addreses/places';
 import { ResultsTableType } from '@/components/pages/MainPage/ResultsTable/ResultsTable.type';
 import { Place, PlaceType } from '@/interfaces/interfaces';
-import { StyledTableContainer } from '@/components/pages/MainPage/ResultsTable/ResultTable.style';
+import {
+  StyledTableContainer,
+  StyledTableHeadCell,
+  StyledTableRow,
+  StyledTableRowCell,
+} from '@/components/pages/MainPage/ResultsTable/ResultTable.style';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { useTheme } from '@mui/system';
+import { SyntheticEvent, useState } from 'react';
+import CloseIcon from '@mui/icons-material/Close';
 
 export const ResultsTable = (props: ResultsTableType) => {
   const { searchString, searchType } = props;
+  const [showSnack, setShowSnack] = useState<boolean>(false);
+
+  const handleCopyClick = (text: string) => {
+    copyToClipboard(text);
+    setShowSnack(true);
+  };
+
+  const handleClose = (event: SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setShowSnack(false);
+  };
+
+  const action = (
+    <>
+      <IconButton
+        size='small'
+        aria-label='close'
+        color='inherit'
+        onClick={handleClose}
+      >
+        <CloseIcon fontSize='small' />
+      </IconButton>
+    </>
+  );
+
   const addresses: Array<Place> = [
     ...(PERSONS as Array<Place>),
     ...(PLACES as Array<Place>),
   ];
 
-  console.log(searchString);
-  console.log(searchType);
+  const muiTheme = useTheme();
 
   let filteredAddresses: Array<Place>;
 
@@ -38,44 +73,60 @@ export const ResultsTable = (props: ResultsTableType) => {
     <>
       {filteredAddresses?.length > 0 && (
         <StyledTableContainer component={Paper}>
-          <Table aria-label='simple table'>
+          <Table aria-label='results table' size='small'>
             <TableHead>
               <TableRow>
-                <TableCell>Назва</TableCell>
-                <TableCell align='right'>Адреса</TableCell>
-                <TableCell align='right'>Тип</TableCell>
-                <TableCell align='right'>Копіювати</TableCell>
+                <StyledTableHeadCell>Назва</StyledTableHeadCell>
+                <StyledTableHeadCell align='right'>Адреса</StyledTableHeadCell>
+                <StyledTableHeadCell align='right' theme={muiTheme}>
+                  Тип
+                </StyledTableHeadCell>
+                <StyledTableHeadCell align='right'>
+                  Копіювати
+                </StyledTableHeadCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredAddresses.map((row, index) => (
-                <TableRow
+                <StyledTableRow
                   key={row.title + index}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
-                  <TableCell component='th' scope='row'>
+                  <StyledTableRowCell component='th' scope='row'>
                     {row.title}
-                  </TableCell>
-                  <TableCell align='right'>{row.address}</TableCell>
-                  <TableCell align='right'>
+                  </StyledTableRowCell>
+                  <StyledTableRowCell align='right'>
+                    {row.address}
+                  </StyledTableRowCell>
+                  <StyledTableRowCell align='right' theme={muiTheme}>
                     {parsePlaceType(row.type)}
-                  </TableCell>
-                  <TableCell align='right'>
+                  </StyledTableRowCell>
+                  <StyledTableRowCell align='right'>
                     <Button
                       variant='outlined'
-                      onClick={() => {
-                        copyToClipboard(`${row.title} ${row.address}`);
-                      }}
+                      onClick={() =>
+                        handleCopyClick(`${row.title} ${row.address}`)
+                      }
                     >
-                      Копіювати
+                      <Tooltip title='Скопіювати' placement='top'>
+                        <ContentCopyIcon />
+                      </Tooltip>
                     </Button>
-                  </TableCell>
-                </TableRow>
+                  </StyledTableRowCell>
+                </StyledTableRow>
               ))}
             </TableBody>
           </Table>
         </StyledTableContainer>
       )}
+
+      <Snackbar
+        open={showSnack}
+        autoHideDuration={5000}
+        onClose={handleClose}
+        message='Назву скопійовано'
+        action={action}
+      />
     </>
   );
 };
